@@ -47,27 +47,25 @@ function getAvg(coordinates) {
 
 //Make all the clusters with at least motionfilter apart
 function superClusters(clusterCollection, motionfilter) {
-	var startCluster = clusterCollection[0];
-	var params = {
-		"ll": startCluster[0]+ "," + startCluster[1]
-	}
-	coordinatePairs.push([startCluster[0],startCluster[1]]);
-	foursquare.getVenues(params, function(err, results){
-	if(err) throw err
-	var venues = results.response.venues;
-	var venuesNames = []
-	venues.forEach(function(element, index){
-		venuesNames.push(element.name)
-	})
-	venueList.push(venuesNames);
-    })
-	for (i = 1; i < clusterCollection.length; i++) {
-		var currentCluster = clusterCollection[i];
-		if (getDistanceInKm(startCluster[0], startCluster[1], currentCluster[0], currentCluster[1])*1000 <= motionfilter) continue;
-		var params = {
-			"ll": currentCluster[0]+ "," + currentCluster[1]
+	var len = clusterCollection.length;
+	 console.log("len is: "+len);
+	 for(i =0; i<len;i++){
+	 	var startCluster = clusterCollection[i];
+	 	for(j = i+1;j<len;j++){
+	 		var currentCluster = clusterCollection[j];
+	 		if(getDistanceInKm(startCluster[0], startCluster[1], currentCluster[0], currentCluster[1])*1000 <= motionfilter){
+	 			clusterCollection[j]=clusterCollection[len-1];
+	 			len --;
+	 			j --;
+	 		}
+	 	}
+	 }
+	 for(k=0;k<len;k++){
+	 	var temp = clusterCollection[k];
+	 	var params = {
+		"ll": temp[0]+ "," + temp[1]
 		}
-		coordinatePairs.push([currentCluster[0],currentCluster[1]]);
+		coordinatePairs.push(temp);
 		foursquare.getVenues(params, function(err, results){
 			if(err) throw err
 			var venues = results.response.venues;
@@ -76,14 +74,8 @@ function superClusters(clusterCollection, motionfilter) {
 				venuesNames.push(element.name)
 			})
 			venueList.push(venuesNames);
-		})
-		startCluster = currentCluster;
-	}
-	
-}
-
-function addVenue(index, venues) {
-	return clusters[index].push(venues);
+    	})
+	 }
 }
 
 // Given http post requests with headers('deviceid', 'timefilter', 'motionfilter', 'starttime', 'endtime'),return with the GPS coordinates and venue names of the valid locations
