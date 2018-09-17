@@ -67,7 +67,11 @@ function superClusters(clusterCollection, motionfilter) {
 		}
 		coordinatePairs.push(temp);
 		foursquare.getVenues(params, function(err, results){
-			if(err) throw err
+			if(err) {
+				coordinatePairs=[];
+				venueList = [];
+				return;
+			}
 			var venues = results.response.venues;
 			var venuesNames = []
 			venues.forEach(function(element, index){
@@ -96,13 +100,20 @@ function requestHandler(req, res, next) {
 		})
 
 		db.connect(function(err) {
-			if(err) throw err
+			if (err) {
+						console.log("db error");
+						res.send('[]')
+					}
 			console.log("Connected to MySQL...");
 
 			db.query(
 				"SELECT double_latitude, double_longitude, timestamp from locations WHERE device_id LIKE '"+ deviceid + "' AND timestamp BETWEEN '"+ starttime + "' AND '"+ endtime + "' ORDER BY timestamp ASC", 
 				function( err, result){
-					if (err) throw err
+					if (err) {
+						console.log("error");
+						db.end()
+						res.send('[]')
+					}
 					var locations = JSON.parse(JSON.stringify(result)); //convert SQL query result to JSON
 					if (locations.length == 0) {
 						db.end()
