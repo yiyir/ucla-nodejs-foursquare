@@ -65,22 +65,25 @@ function superClusters(clusterCollection, motionfilter) {
 	 	var params = {
 		"ll": temp[0]+ "," + temp[1]
 		}
-		coordinatePairs.push(temp);
-		foursquare.getVenues(params, function(err, results){
-			if(err) {
-				coordinatePairs=[];
-				venueList = [];
-				return;
-			}
-			var venues = results.response.venues;
-			var venuesNames = []
-			venues.forEach(function(element, index){
-				venuesNames.push(element.name)
-			})
-			venueList.push(venuesNames);
-    	})
-	 }
+		if(temp[0]!=0 && temp[1]!=0){
+			coordinatePairs.push(temp);
+			foursquare.getVenues(params, function(err, results){
+				if(err) {
+					coordinatePairs=[];
+					venueList = [];
+					return;
+				}
+				var venues = results.response.venues;
+				var venuesNames = []
+				venues.forEach(function(element, index){
+					venuesNames.push(element.name)
+				})
+				venueList.push(venuesNames);
+    		})
+	 	}
+	}
 }
+
 
 // Given http post requests with headers('deviceid', 'timefilter', 'motionfilter', 'starttime', 'endtime'),return with the GPS coordinates and venue names of the valid locations
 function requestHandler(req, res, next) {
