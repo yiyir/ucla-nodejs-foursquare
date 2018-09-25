@@ -63,7 +63,8 @@ function superClusters(clusterCollection, motionfilter) {
 	 for(k=0;k<len;k++){
 	 	var temp = clusterCollection[k];
 	 	var params = {
-		"ll": temp[0]+ "," + temp[1]
+		"ll": temp[0]+ "," + temp[1],
+		"radius": 200
 		}
 		if(temp[0]!=0 && temp[1]!=0){
 			coordinatePairs.push(temp);
