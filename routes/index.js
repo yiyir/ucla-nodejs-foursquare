@@ -68,7 +68,8 @@ function superClusters(clusterCollection, motionfilter) {
 		}
 		if(temp[0]!=0 && temp[1]!=0){
 			coordinatePairs.push(temp);
-			foursquare.getVenues(params, function(err, results){
+			venueList.push(await new Promise(function(resolve, reject) {
+  				foursquare.getVenues(params, function(err, results){
 				if(err) {
 					coordinatePairs=[];
 					venueList = [];
@@ -79,8 +80,10 @@ function superClusters(clusterCollection, motionfilter) {
 				venues.forEach(function(element, index){
 					venuesNames.push(element.name)
 				})
-				venueList.push(venuesNames);
-    		})
+				// console.log("venue names are: "+venuesNames);
+				resolve(venuesNames);
+    			})
+			}));
 	 	}
 	}
 }
