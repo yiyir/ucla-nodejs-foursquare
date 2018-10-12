@@ -128,6 +128,14 @@ function requestHandler(req, res, next) {
 						res.send('[]')
 					} else {
 						console.log(locations.length);
+						// console.log(locations);
+						for(i = 0;i<locations.length;i++){
+							let element = locations[i];
+							if(element.double_latitude == 0 || element.double_longitude == 0){
+								locations.splice(i,1);
+								i--;
+							}
+						}
 						var cluster = [];
 						var clusters = [];
 						var start = locations[0];
