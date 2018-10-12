@@ -14,9 +14,6 @@ var foursquare = (require('foursquarevenues'))(fsqr_client_id, fsqr_client_secre
 
 var mysql = require('mysql')
 
-let clusters = [];
-let venueList = [];
-let coordinatePairs=[];
 router.post('/', requestHandler);
 
 //Get distance between coordinates, using Haversine formula (https://en.wikipedia.org/wiki/Haversine_formula)
@@ -45,11 +42,14 @@ function getAvg(coordinates) {
 	}) / coordinates.length;
 }
 
-//Make all the clusters with at least motionfilter apart
-function superClusters(clusterCollection, motionfilter) {
+//Condense the clusters again using motionfilter restraint
+async function superClusters(clusterCollection, motionfilter) {
+	var venueList = [];
+	var coordinatePairs=[];
 	var len = clusterCollection.length;
-	 console.log("len is: "+len);
-	 for(i =0; i<len;i++){
+	console.log("len is: "+len);
+	console.log(clusterCollection);
+	for(i =0; i<len;i++){
 	 	var startCluster = clusterCollection[i];
 	 	for(j = i+1;j<len;j++){
 	 		var currentCluster = clusterCollection[j];
@@ -60,8 +60,9 @@ function superClusters(clusterCollection, motionfilter) {
 	 		}
 	 	}
 	 }
-	 for(k=0;k<len;k++){
-	 	var temp = clusterCollection[k];
+	console.log("now the length is: "+len);
+	for(k=0;k<len;k++){
+		var temp = clusterCollection[k];
 	 	var params = {
 		"ll": temp[0]+ "," + temp[1],
 		"radius": 200
@@ -71,8 +72,7 @@ function superClusters(clusterCollection, motionfilter) {
 			venueList.push(await new Promise(function(resolve, reject) {
   				foursquare.getVenues(params, function(err, results){
 				if(err) {
-					coordinatePairs=[];
-					venueList = [];
+					console.log("Foursquare error!");
 					return;
 				}
 				var venues = results.response.venues;
@@ -80,12 +80,12 @@ function superClusters(clusterCollection, motionfilter) {
 				venues.forEach(function(element, index){
 					venuesNames.push(element.name)
 				})
-				// console.log("venue names are: "+venuesNames);
 				resolve(venuesNames);
     			})
 			}));
 	 	}
 	}
+	return {coordinatePairs,venueList};
 }
 
 
@@ -108,25 +108,28 @@ function requestHandler(req, res, next) {
 
 		db.connect(function(err) {
 			if (err) {
-						console.log("db error");
-						res.send('[]')
-					}
+				console.log("db connection error!");
+				res.send('[]')
+				res.end()
+			}
 			console.log("Connected to MySQL...");
-
 			db.query(
-				"SELECT double_latitude, double_longitude, timestamp from locations WHERE device_id LIKE '"+ deviceid + "' AND timestamp BETWEEN '"+ starttime + "' AND '"+ endtime + "' ORDER BY timestamp ASC", 
-				function( err, result){
+				"SELECT double_latitude, double_longitude, timestamp from locations WHERE device_id = '"+ deviceid + "' AND timestamp BETWEEN '"+ starttime + "' AND '"+ endtime + "' ORDER BY timestamp ASC", 
+				async function( err, result){
 					if (err) {
-						console.log("error");
+						console.log("db query error!");
 						db.end()
 						res.send('[]')
+						res.end()
 					}
 					var locations = JSON.parse(JSON.stringify(result)); //convert SQL query result to JSON
 					if (locations.length == 0) {
 						db.end()
 						res.send('[]')
 					} else {
+						console.log(locations.length);
 						var cluster = [];
+						var clusters = [];
 						var start = locations[0];
 						cluster.push(start)
 						for( i = 1; i < locations.length; i++) {
@@ -158,15 +161,10 @@ function requestHandler(req, res, next) {
 							}
 							clusters.push([getAvg(latitudes), getAvg(longitudes)]);
 						}
-							superClusters(clusters, motionfilter);
-							console.log("Number of locations detected: " + coordinatePairs.length)
-							let ourresult = {coordinatePairs,venueList}
-							res.send(JSON.stringify(ourresult))
-							clusters = []
-							venueList = []
-							coordinatePairs = []
-						
+						let ourresult = await superClusters(clusters, motionfilter);
+						res.send(JSON.stringify(ourresult))
 						db.end()
+						res.end()
 					}
 				}
 			)
