@@ -114,7 +114,7 @@ function requestHandler(req, res, next) {
 			}
 			console.log("Connected to MySQL...");
 			db.query(
-				"SELECT double_latitude, double_longitude, timestamp from locations WHERE device_id = '"+ deviceid + "' AND timestamp BETWEEN '"+ starttime + "' AND '"+ endtime + "' ORDER BY timestamp ASC", 
+				"SELECT double_latitude, double_longitude, timestamp from locations WHERE device_id = '"+ deviceid + "' AND timestamp BETWEEN '"+ starttime + "' AND '"+ endtime + "' AND accuracy < 75 ORDER BY timestamp ASC", 
 				async function( err, result){
 					if (err) {
 						console.log("db query error!");
