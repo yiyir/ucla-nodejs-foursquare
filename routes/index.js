@@ -46,23 +46,30 @@ function getAvg(coordinates) {
 async function superClusters(clusterCollection, motionfilter) {
 	var venueList = [];
 	var coordinatePairs=[];
+	// check the orginial length 
 	var len = clusterCollection.length;
 	console.log("len is: "+len);
 	console.log(clusterCollection);
-	for(i =0; i<len;i++){
-	 	var startCluster = clusterCollection[i];
-	 	for(j = i+1;j<len;j++){
-	 		var currentCluster = clusterCollection[j];
-	 		if(getDistanceInKm(startCluster[0], startCluster[1], currentCluster[0], currentCluster[1])*1000 <= motionfilter){
-	 			clusterCollection[j]=clusterCollection[len-1];
-	 			len --;
-	 			j --;
-	 		}
-	 	}
-	 }
+
+	// compare neighboring clusters and remove duplicates using motionfilter
+	var superCluster = []
+	var startCluster = clusterCollection[0]
+	superCluster.push(startCluster)
+	for (i = 1; i < clusterCollection; i++) {
+		var currentCluster = clusterCollection[i]
+		if (getDistanceInKm(startCluster[0], startCluster[1], currentCluster[0], currentCluster[1])*1000 <= motionfilter) continue;
+		
+		superCluster.push(currentCluster)
+		startCluster = currentCluster
+	}
+
+	// check the new length 
+	len = superCluster.length;
 	console.log("now the length is: "+len);
+
+	// get the venue names of the resulting super clusters
 	for(k=0;k<len;k++){
-		var temp = clusterCollection[k];
+		var temp = superCluster[k];
 	 	var params = {
 		"ll": temp[0]+ "," + temp[1],
 		"radius": 200
@@ -153,7 +160,7 @@ function requestHandler(req, res, next) {
 										latitudes.push(cluster[ll].double_latitude)
 										longitudes.push(cluster[ll].double_longitude)
 									}
-									clusters.push( [getAvg(latitudes), getAvg(longitudes)] );
+									clusters.push( [getAvg(latitudes), getAvg(longitudes), cluster[0].timestamp, cluster[cluster.length-1].timestamp] );
 								}
 								start = current;
 								cluster=[];
